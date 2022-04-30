@@ -8,6 +8,7 @@ const CommentSchema = new Schema (
         name: {type: String, required: true},
         text: {type: String , required: true},
         timestamp: {type: Date, default: Date.now },
+        post: {type: Schema.Types.ObjectId, ref: 'Post'},
     }
 )
 

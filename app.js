@@ -1,13 +1,19 @@
+require('dotenv').config();
 var express = require('express');
 var path = require('path');
 //var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors')
 
+var mongoose = require('mongoose');
+var mongoDB = process.env.MONGODB_URI;
+mongoose.connect(mongoDB, { useNewURLParser: true, useUnifiedTopology: true });
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
 var indexRouter = require('./routes/index');
 var postRouter = require('./routes/posts')
 var userRouter = require('./routes/users');
-var commentRouter = require('./routes/comments')
 
 var app = express();
 

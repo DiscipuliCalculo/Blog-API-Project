@@ -11,7 +11,7 @@ var validators = require('../components/validators')
 /* GET all users. On path /users/ */
 userRouter.get('/', async function(req, res, next) {
   const users = await User.find({})
-  return res.send(users + '\n');
+  return res.json(users);
 });
 
 /* GET one user. On path /users/:userId */
@@ -24,11 +24,10 @@ userRouter.get('/:userId', async function(req, res, next) {
           return res.send('No user found\n')
         }
         else {
-          return res.send(result + '\n')
+          return res.json(result)
         }
       }
     ).catch((error) => {
-      console.log(req.params.userId)
       error.statusCode = 400;
       next(error);
     })
@@ -85,7 +84,7 @@ userRouter.put('/:userId', async function(req, res, next) {
           return res.send('No user found\n')
         }
         else {
-          return res.send(result+'\n')
+          return res.json(result)
         }
       }
     ).catch((error) => {

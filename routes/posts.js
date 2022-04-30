@@ -9,13 +9,26 @@ var mongoose = require('mongoose')
 
 var userRouter = require('./users');
 
-
 userRouter.use('/:userId', postRouter )
 
 /* GET all posts. On path /users/:userId/posts */
 postRouter.get('/posts', async function(req, res, next) {
-  const posts = await Post.find({})
-  return res.send(posts + '\n');
+  if(mongoose.Types.ObjectId.isValid(req.params.userId)){
+    await Post.find({author: req.params.userId})
+    .then(function(result) {
+      if (!result.length){
+        res.send('No posts by this author\n')
+      }
+      else{
+        res.send(result + '\n')
+      }
+    })
+    .catch((error) => {
+      error.statusCode = 400;
+      next(error);
+    })
+  }
+  else{res.send('invalid user id\n')}
 });
 
 /* GET one post. On path /users/:userId/posts/:postId */
@@ -97,7 +110,7 @@ postRouter.put('/posts/:postId', function(req, res, next) {
 /* DELETE one post. On path /users/:userId/posts/:postId */
 postRouter.delete('/posts/:postId', function(req, res, next) {
   if(mongoose.Types.ObjectId.isValid(req.params.userId)){
-    Post.findOneAndDelete({author: req.params.userId, _id: req.params.postId},function(err, result){
+    Post.findOneAndDelete({author: req.params.userId, _id: req.params.postId}, function(err, result){
       if (err) {return next(err)}
       if (result === null) {
         res.send('Post does not exist\n')
@@ -111,24 +124,109 @@ postRouter.delete('/posts/:postId', function(req, res, next) {
 })
 
 postRouter.get('/posts/:postId/comments', async function(req, res, next) {
-  const comments = await Comment.find({})
-  return res.send(comments + '\n');
+  if(mongoose.Types.ObjectId.isValid(req.params.postId)){
+    await Comment.find({post: req.params.postId})
+    .then(function(result) {
+      if (!result.length){
+        res.send('No comments on this post\n')
+      }
+      else{
+        res.send(result + '\n')
+      }
+    })
+    .catch((error) => {
+      error.statusCode = 400;
+      next(error);
+    })
+  }
+  else{res.send('invalid post id\n')}
 });
 
-postRouter.get('/posts/:postId/comments/:commentId', function(req, res, next) {
-  res.send('Get one comment');
+postRouter.get('/posts/:postId/comments/:commentId', async function(req, res, next) {
+  if(mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+    await Comment.findById(req.params.commentId)
+    .then(
+      function(result) {
+        if (result === null) {
+          return res.send('No comment found\n')
+        }
+        else {
+          return res.send(result + '\n')
+        }
+      }
+    ).catch((error) => {
+      error.statusCode = 400;
+      next(error);
+    })
+  }
+  else {
+    res.send('Not a vaild comment id\n')
+  }
 });
 
-postRouter.post('/posts/:postId/comments', function(req, res, next) {
-  res.send('Add a comment');
+postRouter.post('/posts/:postId/comments', async function(req, res, next) {
+  if (validators.commentValidator(req.body.name, req.body.text) === false){
+    return res.send('Invalid update object\n')
+  }
+  else {
+    Post.findById(req.params.postId, function(err, foundPost) {
+      if (err) {return next(err)}
+      if (foundPost === null) {
+        res.send('Post does not exist\n')
+      }
+      else {
+        const comment = new Comment (
+          {
+            name: req.body.name,
+            text: req.body.text,
+            post: foundPost,
+          }
+        )
+        comment.save(function (err) {
+          if (err) {return next(err)}
+          res.send('New comment added\n')
+        })
+      }
+    })
+  }
 });
 
 postRouter.put('/posts/:postId/comments/:commentId', function(req, res, next) {
-  res.send('edit a comment');
+  if (validators.commentValidator(req.body.name, req.body.text) === false){
+    return res.send('Invalid update object\n')
+  }
+  else {
+    if(mongoose.Types.ObjectId.isValid(req.params.postId)){
+      Comment.findOneAndUpdate({post: req.params.postId, _id: req.params.commentId},
+        {name: req.body.name, text: req.body.text}, function(err, result){
+          if (err) {return next(err)}
+          if (result === null) {
+            res.send('Comment does not exist\n')
+          }
+          else {
+            res.send('Comment edited\n')
+          }
+        })
+    }
+    else {
+      res.send('Not valid id\n')
+    }
+  }
 });
 
 postRouter.delete('/posts/:postId/comments/:commentId', function(req, res, next) {
-  res.send('delete a comment');
+  if(mongoose.Types.ObjectId.isValid(req.params.us)){
+    Post.findOneAndDelete({author: req.params.userId, _id: req.params.postId}, function(err, result){
+      if (err) {return next(err)}
+      if (result === null) {
+        res.send('Post does not exist\n')
+      }
+      else res.send('Post deleted\n')
+    })
+  }
+  else{
+    res.send('Not valid id\n')
+  }
 });
 
 module.exports = postRouter;

@@ -24,3 +24,13 @@ exports.postValidator = function(title, text) {
   return true;
 }
 
+exports.commentValidator = function(name, text) {
+  const specialChars = /[<>]/
+  if (specialChars.test(name) == true || name == null) {
+    return false 
+  }
+  if (specialChars.test(text) == true || text == null) {
+     return false
+  }
+  return true;
+}
